@@ -13,20 +13,25 @@ This project implements **Option C** from the NLP course general assignment: a d
 ## Project Structure
 ```
 nlp-project/
-├── src/                    # Source code
+├── src/                         # Source code
 │   ├── __init__.py
-│   ├── main.py            # Entry point
-│   ├── corpus_loader.py   # Reuters corpus loader
-│   └── document_matcher.py # TF-IDF and similarity matching
-├── tests/                  # Unit tests
+│   ├── main.py                  # Entry point
+│   ├── corpus_loader.py         # Reuters corpus loader
+│   └── document_matcher.py      # TF-IDF and similarity matching
+├── tests/                       # Testing
 │   ├── __init__.py
-│   └── test_document_matcher.py
-├── data/                   # Data files (not used for now)
-├── docs/                   # Documentation
-├── assignment/            # Assignment PDF
-├── requirements.txt       # Python dependencies
-├── .gitignore            # Git ignore rules
-└── README.md             # This file
+│   ├── test_document_matcher.py # Unit tests
+│   ├── test_integration.py      # Integration tests
+│   └── test_sample.txt          # Sample test file
+├── docs/                        # Documentation
+│   ├── ALGORITHM_EXPLAINED.md   # Algorithm details
+│   └── TESTING.md               # Testing documentation
+├── assignment/                  # Assignment PDF
+│   └── assignment.pdf
+├── requirements.txt             # Python dependencies
+├── .gitignore                   # Git ignore rules
+├── LICENSE                      # MIT License
+└── README.md                    # This file
 ```
 
 ## Installation

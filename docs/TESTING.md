@@ -66,7 +66,7 @@ Run with: `python -m unittest tests.test_document_matcher -v`
 
 ## Integration Tests
 
-Location: `test_integration.py`
+Location: `tests/test_integration.py`
 
 Full system tests using complete Reuters corpus.
 
@@ -137,14 +137,14 @@ Result: PASS
 - Each score >= next score in list
 
 ### Test 9: File Input
-Used test_sample.txt (oil price).
+Used tests/test_sample.txt (oil price).
 
 Result: PASS
 - File loaded successfully
 - Found 4,315 matches at 60th percentile
 - Identical processing to text input
 
-Run with: `python test_integration.py`
+Run with: `python tests/test_integration.py`
 
 ---
 
@@ -216,7 +216,7 @@ python -m unittest tests.test_document_matcher -v
 
 Integration tests:
 ```bash
-python test_integration.py
+python tests/test_integration.py
 ```
 
 Manual testing:

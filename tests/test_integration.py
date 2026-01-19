@@ -82,13 +82,15 @@ def test_complete_workflow():
     # Test 9: Test file loading
     print("\n[TEST 9] Testing file input...")
     try:
-        with open('test_sample.txt', 'r') as f:
+        import os
+        test_file = os.path.join(os.path.dirname(__file__), 'test_sample.txt')
+        with open(test_file, 'r') as f:
             file_content = f.read()
         results_file = matcher.find_similar_documents(file_content, percentile=60)
         assert len(results_file) > 0, "Should find matches from file content"
         print(f"✓ PASS: File input processed, found {len(results_file)} matches")
     except FileNotFoundError:
-        print("⚠ SKIP: test_sample.txt not found (create it for full test)")
+        print("⚠ SKIP: test_sample.txt not found in tests/ directory")
 
     print("\n" + "="*70)
     print("ALL INTEGRATION TESTS PASSED ✓")
