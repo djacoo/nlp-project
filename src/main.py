@@ -20,7 +20,7 @@ def read_document_from_file(file_path: str) -> str:
     """
     Reads a document from a file path
 
-    Handles errors gracefully if file doesn't exist or can't be read.
+    Handles errors if file doesn't exist or can't be read.
     Supports any text file (.txt, .md, etc.)
 
     Args:
@@ -43,10 +43,10 @@ def read_document_from_file(file_path: str) -> str:
 
 def get_user_input() -> tuple:
     """
-    Gets the document and percentile from the user
+    Gets the document and percentile from input
 
     The assignment requires two inputs:
-    1. A document (can be typed or from a file)
+    1. A document (can be typed or from file)
     2. A percentile value (0-100) for filtering results
 
     Returns:
@@ -57,15 +57,15 @@ def get_user_input() -> tuple:
     print("="*70)
 
     # get the document
-    print("\nHow would you like to provide the document?")
-    print("1. Enter text directly (good for short documents)")
-    print("2. Provide a file path (good for longer documents)")
+    print("\nHow would you provide the document?")
+    print("1. Enter text directly")
+    print("2. Provide a file path")
 
-    choice = input("\nEnter your choice (1 or 2): ").strip()
+    choice = input("\nEnter (1 or 2): ").strip()
 
     if choice == "1":
         # option 1: type it in
-        print("\nEnter your document text (press Ctrl+D on Mac/Linux or Ctrl+Z on Windows when done):")
+        print("\nEnter your document text (press Ctrl+D on Linux or Ctrl+Z on Windows to finish):")
         lines = []
         try:
             while True:
@@ -83,7 +83,7 @@ def get_user_input() -> tuple:
         print(f"\nDocument loaded successfully ({len(document_text)} characters)")
 
     else:
-        print("Invalid choice. Please run the program again and choose 1 or 2.")
+        print("Invalid choice. Please run again and choose 1 or 2.")
         sys.exit(1)
 
     # get the percentile
@@ -100,7 +100,7 @@ def get_user_input() -> tuple:
                 print("  - Lower percentile = more, less similar documents")
 
         except ValueError:
-            print("Please enter a valid number (e.g., 70, 85.5)")
+            print("Please enter a valid number")
 
     return document_text, percentile
 
@@ -180,6 +180,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # this ensures main() only runs when you execute this file directly
-    # (not when importing it as a module)
     main()

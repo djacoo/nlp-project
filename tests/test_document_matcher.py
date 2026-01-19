@@ -1,8 +1,7 @@
 """
 Unit tests for DocumentMatcher
 
-Basic tests to make sure the core functionality works.
-Not comprehensive, but covers the main features.
+Basic tests
 """
 
 import unittest

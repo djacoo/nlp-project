@@ -1,7 +1,7 @@
 """
 Document Matcher - Core algorithm for Assignment Option C
 
-This is where the main algorithm lives. It uses TF-IDF and cosine similarity
+Main core algorithm. It uses TF-IDF and cosine similarity
 to find similar documents.
 
 Quick recap of the techniques:
@@ -13,7 +13,7 @@ The formulas (for reference):
     where TF = term frequency, IDF = inverse document frequency
 
     Cosine Similarity = (A · B) / (||A|| × ||B||)
-    basically the dot product divided by magnitudes
+    the dot product divided by magnitudes
 """
 
 import numpy as np
@@ -26,21 +26,20 @@ class DocumentMatcher:
     """
     Main class for document similarity matching
 
-    The workflow is:
+    Workflow:
     1. fit_corpus() - compute TF-IDF vectors for the whole corpus
     2. find_similar_documents() - find docs similar to a query
-    3. print_results() - display the results nicely
+    3. print_results() - display the results
 
-    I'm storing the vectorizer and corpus_vectors so we don't have to
-    recompute TF-IDF every time (that would be slow).
+    Storing the vectorizer and corpus_vectors so don't have to recompute TF-IDF every time.
     """
 
     def __init__(self):
         """
         Initialize with empty values
 
-        Everything gets set when fit_corpus() is called.
-        Following sklearn's fit/transform pattern here.
+        Everything set when fit_corpus() is called.
+        Following sklearn's fit/transform pattern.
         """
         self.vectorizer = None      # TfidfVectorizer object
         self.corpus_vectors = None  # TF-IDF matrix (stored as sparse matrix for efficiency)
@@ -51,7 +50,7 @@ class DocumentMatcher:
         """
         Compute TF-IDF vectors for the entire corpus
 
-        This is the "training" phase where we:
+        This is the training phase:
         1. Build vocabulary from all documents
         2. Calculate IDF for each word (how rare/common it is)
         3. Transform each document into a TF-IDF vector
@@ -64,8 +63,7 @@ class DocumentMatcher:
             corpus: list of document texts (raw, no preprocessing)
             doc_ids: corresponding document IDs
 
-        Note: I'm NOT removing stopwords because the assignment specifically
-        says "no stopword elimination" - we need complete documents.
+        Note: no stopword elimination!!
         """
         self.corpus = corpus
         self.doc_ids = doc_ids
@@ -80,7 +78,7 @@ class DocumentMatcher:
         print("Computing TF-IDF vectors for corpus...")
         self.corpus_vectors = self.vectorizer.fit_transform(corpus)
 
-        # show what we got
+        # show results
         print(f"TF-IDF matrix shape: {self.corpus_vectors.shape}")
         print(f"  - {self.corpus_vectors.shape[0]} documents")
         print(f"  - {self.corpus_vectors.shape[1]} unique terms in vocabulary")
@@ -93,7 +91,7 @@ class DocumentMatcher:
         """
         Find documents similar to query above a percentile threshold
 
-        This implements the main Option C algorithm:
+        This implements the main algorithm:
         1. Convert query to TF-IDF vector (using same vocabulary as corpus)
         2. Calculate cosine similarity between query and all corpus docs
         3. Use percentile to find threshold value
@@ -110,19 +108,17 @@ class DocumentMatcher:
         Returns:
             list of (doc_id, similarity_score) tuples, sorted by score
 
-        Note: The percentile thing took me a while to understand - basically
-        if you say 70, you're asking for docs in the top 30% of similarity.
         """
-        # make sure we've fitted the corpus first
+        # fitted corpus check
         if self.vectorizer is None or self.corpus_vectors is None:
             raise ValueError("Must call fit_corpus() before finding similar documents")
 
-        # transform query using the same vocabulary we learned
+        # transform query using the same vocabulary
         # if query has new words, they just get ignored
         query_vector = self.vectorizer.transform([query_document])
 
         # calculate cosine similarity with all corpus documents
-        # returns 2D array but we only have 1 query so take [0]
+        # returns 2D array (only 1 query, so [0])
         similarities = cosine_similarity(query_vector, self.corpus_vectors)[0]
 
         # find the threshold value based on percentile
@@ -147,16 +143,14 @@ class DocumentMatcher:
 
     def print_results(self, results: List[Tuple[str, float]], percentile: float):
         """
-        Print results in a nice format
+        Print results
 
-        Just makes the output readable with a header and formatted list.
         """
         print(f"\n{'='*70}")
         print(f"Documents matching above {percentile}th percentile")
         print(f"Found {len(results)} matching documents")
         print(f"{'='*70}\n")
 
-        # print each result with some formatting
-        # starting enumerate at 1 looks nicer than 0
+        # print each result
         for i, (doc_id, score) in enumerate(results, 1):
             print(f"{i:3d}. {doc_id:20s} | Similarity: {score:.4f}")
