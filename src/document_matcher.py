@@ -117,15 +117,27 @@ class DocumentMatcher:
         # if query has new words, they just get ignored
         query_vector = self.vectorizer.transform([query_document])
 
+        # guard: if query shares no vocabulary with the corpus,
+        # the vector is all zeros and every similarity will be 0.0
+        if query_vector.nnz == 0:
+            print("\nWarning: query has no terms in common with the corpus vocabulary.")
+            print("Cannot compute meaningful similarity scores.")
+            return []
+
         # calculate cosine similarity with all corpus documents
         # returns 2D array (only 1 query, so [0])
         similarities = cosine_similarity(query_vector, self.corpus_vectors)[0]
+
+        # show distribution info so the user understands the result set
+        non_zero = int(np.sum(similarities > 0))
+        total = len(similarities)
+        print(f"\nSimilarity distribution: {non_zero}/{total} documents share terms with query")
 
         # find the threshold value based on percentile
         # numpy's percentile finds the value where X% of data falls below it
         threshold = np.percentile(similarities, percentile)
 
-        print(f"\nPercentile threshold ({percentile}th): {threshold:.4f}")
+        print(f"Percentile threshold ({percentile}th): {threshold:.4f}")
 
         # get indices of documents above threshold
         matching_indices = np.where(similarities >= threshold)[0]
