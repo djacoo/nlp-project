@@ -38,15 +38,9 @@ class CorpusLoader:
 
         Put this in a separate method so it's not cluttering up load_corpus()
         """
-        try:
-            # check if we already have it
-            nltk.data.find('corpora/reuters')
-        except LookupError:
-            # nope, need to download
-            print("Downloading Reuters corpus...")
-            print("(This only happens once - approximately 2MB download)")
-            nltk.download('reuters')
-            print("Download complete!")
+        # nltk.download() already checks if the corpus is present
+        # and skips the download if so, no manual check needed
+        nltk.download('reuters', quiet=True)
 
     def load_corpus(self) -> Tuple[List[str], List[str]]:
         """
