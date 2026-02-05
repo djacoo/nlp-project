@@ -1,201 +1,197 @@
 # Algorithm Explanation
+
 ## How Document Similarity Matching Works
 
-## The Explanation
+This document provides a detailed explanation of the techniques and the pipeline used in this project. The goal is straightforward: given a query document provided by the user, find the most similar documents in the Reuters corpus.
 
-**What we're trying to do**: Given a document from the user, find similar documents in the Reuters corpus.
+The approach relies on two well-established methods from information retrieval:
 
-**How we do it**:
-1. Convert all documents (corpus + query) into numbers using TF-IDF
-2. Measure similarity between the query and each corpus document using cosine similarity
-3. Filter by percentile to only show the most similar ones
+1. **TF-IDF** (Term Frequency–Inverse Document Frequency) to convert raw text into numerical vectors
+2. **Cosine similarity** to measure how close two document vectors are to each other
 
-**Why this approach**:
-- TF-IDF is a classic way to represent text numerically while capturing which words are important
-- Cosine similarity works well for comparing documents regardless of their length
+A percentile-based filter is then applied so that only the most relevant matches are returned.
 
 ---
 
-## Part 1: Understanding TF-IDF
+## Part 1: TF-IDF — From Words to Numbers
 
-### The Problem with Simple Word Counting
+### Why simple word counting falls short
 
-If you just count words, you run into issues. Consider these two documents:
+A naive approach to representing documents numerically would be to count how many times each word appears. Consider two documents:
 
-- Doc A: "The cat sat on the mat"
-- Doc B: "The dog sat on the rug"
+- Doc A: *"The cat sat on the mat"*
+- Doc B: *"The dog sat on the rug"*
 
-A simple word count would say "the" is the most important word (appears twice in each). But "the" doesn't tell us anything about what the documents are about. The meaningful words are "cat", "dog", "mat", "rug".
+Under raw word counts, "the" would be flagged as the most significant word — it appears twice in each document. But "the" carries almost no information about what these documents are actually about. The meaningful words are "cat", "dog", "mat", and "rug".
 
-TF-IDF solves this.
+TF-IDF addresses this directly.
 
-### What is TF-IDF?
+### Definition
 
-**TF-IDF** = **Term Frequency** × **Inverse Document Frequency**
+**TF-IDF** is the product of two quantities:
 
-It's basically: *how often does this word appear in this document* × *how rare is this word overall*
-
-**The Formula:**
 ```
-TF-IDF(word, document) = TF(word, doc) × IDF(word)
+TF-IDF(term, document) = TF(term, document) × IDF(term)
+```
 
 where:
-  TF(word, doc) = (times word appears in doc) / (total words in doc)
-  IDF(word) = log(total documents / documents containing word)
-```
 
-### Breaking it Down with an Example
+- **TF (Term Frequency)** measures how often a term appears within a single document:
 
-Let's use a simple corpus to make a simple example:
+  ```
+  TF(term, doc) = (number of times term appears in doc) / (total number of terms in doc)
+  ```
 
-**Corpus:**
-- Doc1: "cats are cute animals"
-- Doc2: "dogs are cute animals"
-- Doc3: "fish swim in water"
+- **IDF (Inverse Document Frequency)** measures how rare or common a term is across the entire corpus:
 
-**Calculate TF-IDF for "cute" in Doc1:**
+  ```
+  IDF(term) = log(N / df(term))
+  ```
 
-**Step 1: Calculate TF (Term Frequency)**
-- "cute" appears 1 time in Doc1
-- Doc1 has 4 words
-- TF = 1/4 = 0.25
+  where *N* is the total number of documents and *df(term)* is the number of documents that contain the term.
 
-**Step 2: Calculate IDF (Inverse Document Frequency)**
-- Total documents = 3
-- Documents containing "cute" = 2 (Doc1 and Doc2)
-- IDF = log(3/2) = log(1.5) ≈ 0.176
+The intuition is simple: a term that appears frequently in one document (high TF) but rarely across the corpus (high IDF) is likely a strong indicator of that document's topic. Conversely, terms that appear in nearly every document (like "the", "is", "and") receive very low IDF values and are effectively down-weighted.
 
-**Step 3: Calculate TF-IDF**
-- TF-IDF = 0.25 × 0.176 = **0.044**
+### Worked example
 
-**Now compare with "fish" in Doc3:**
-- TF("fish", Doc3) = 1/4 = 0.25 (same frequency as "cute")
-- IDF("fish") = log(3/1) = 0.477 (appears in only 1 doc, so higher IDF!)
-- TF-IDF("fish", Doc3) = 0.25 × 0.477 = **0.119**
+Consider a small corpus of three documents:
 
-**Key insight**: "fish" has a higher TF-IDF than "cute" because it's more unique/distinctive. Words that appear in many documents (like "the", "is", "are") get low IDF scores and thus low TF-IDF scores, even if they appear frequently.
+| | Document text |
+|---|---|
+| Doc 1 | *"cats are cute animals"* |
+| Doc 2 | *"dogs are cute animals"* |
+| Doc 3 | *"fish swim in water"* |
 
-### Documents as Vectors
+**TF-IDF of "cute" in Doc 1:**
 
-After calculating TF-IDF for every word in every document, each document becomes a vector:
+1. TF = 1/4 = 0.25 (one occurrence out of four words)
+2. IDF = log(3/2) = log(1.5) ≈ 0.176 (appears in 2 out of 3 documents)
+3. TF-IDF = 0.25 × 0.176 = **0.044**
+
+**TF-IDF of "fish" in Doc 3:**
+
+1. TF = 1/4 = 0.25 (same within-document frequency)
+2. IDF = log(3/1) = log(3) ≈ 0.477 (appears in only 1 document — much rarer)
+3. TF-IDF = 0.25 × 0.477 = **0.119**
+
+"fish" receives a higher TF-IDF score than "cute" despite having the same raw frequency, because it is more distinctive — it singles out Doc 3 from the rest of the corpus.
+
+### Documents as vectors
+
+Once TF-IDF scores are computed for every term in every document, each document can be represented as a vector in a high-dimensional space (one dimension per unique term in the vocabulary):
 
 ```
 Vocabulary: [animals, are, cats, cute, dogs, fish, in, swim, water]
 
-Doc1 = [0.044, 0.044, 0.119, 0.044, 0.000, 0.000, 0.000, 0.000, 0.000]
-Doc2 = [0.044, 0.044, 0.000, 0.044, 0.119, 0.000, 0.000, 0.000, 0.000]
-Doc3 = [0.000, 0.000, 0.000, 0.000, 0.000, 0.119, 0.119, 0.119, 0.119]
+Doc 1 = [0.044, 0.044, 0.119, 0.044, 0.000, 0.000, 0.000, 0.000, 0.000]
+Doc 2 = [0.044, 0.044, 0.000, 0.044, 0.119, 0.000, 0.000, 0.000, 0.000]
+Doc 3 = [0.000, 0.000, 0.000, 0.000, 0.000, 0.119, 0.119, 0.119, 0.119]
 ```
 
-(These are simplified values - in reality sklearn does some additional normalization)
+*(Values are simplified; scikit-learn applies L2 normalization internally.)*
 
-Notice:
-- Doc1 and Doc2 share several non-zero values (animals, are, cute)
-- Doc3 has completely different non-zero values
-- This suggests Doc1 and Doc2 are more similar to each other than to Doc3
+A few things stand out:
+
+- Doc 1 and Doc 2 share several non-zero entries (animals, are, cute), indicating topical overlap.
+- Doc 3 has non-zero entries in entirely different dimensions, indicating it covers a different topic.
+- Most entries are zero — this sparsity is typical for large vocabularies and is handled efficiently through sparse matrix storage.
 
 ---
 
-## Part 2: Understanding Cosine Similarity
+## Part 2: Cosine Similarity — Measuring the Angle Between Documents
 
-### Why We Need It
+### Why not Euclidean distance?
 
-Now that we have documents as vectors, we need a way to measure how similar two vectors are. We could use Euclidean distance, but that has a problem: longer documents would always seem more "different" just because they have more words.
+With documents represented as vectors, a natural question is how to measure the distance between them. Euclidean distance is a common choice, but it has a significant drawback in this context: it is sensitive to vector magnitude. A long document and a short document about the same topic would appear distant simply because the longer one has larger raw values.
 
-Cosine similarity solves this by measuring the *angle* between vectors, not their magnitude.
+Cosine similarity avoids this problem by measuring the *angle* between two vectors rather than the distance between their endpoints.
 
-### The Formula
+### Definition
 
 ```
 cosine_similarity(A, B) = (A · B) / (||A|| × ||B||)
+```
 
 where:
-  A · B = dot product of A and B
-  ||A|| = magnitude (length) of vector A
-  ||B|| = magnitude (length) of vector B
+
+- **A · B** is the dot product of the two vectors
+- **||A||** and **||B||** are their respective magnitudes (L2 norms)
+
+The result is always between 0 and 1 (for non-negative TF-IDF vectors):
+
+| Value | Interpretation |
+|-------|----------------|
+| 1.0 | Identical documents (vectors point in the same direction) |
+| 0.0 | No similarity (vectors are orthogonal — no shared terms) |
+| 0.0–1.0 | Partial overlap in vocabulary |
+
+### Geometric interpretation
+
 ```
-
-### What This Means
-
-Think of it geometrically:
-
-```
-     Doc2
+     Doc 2
       ↗
      /
-    /  θ (angle)
+    / θ
    /
-  /_________→ Doc1
+  /________→ Doc 1
 ```
 
-Cosine similarity = cos(θ)
+Cosine similarity equals cos(θ). When two document vectors point in nearly the same direction (small θ), the cosine is close to 1. When they are perpendicular (θ = 90°), the cosine is 0.
 
-- If angle is 0° (vectors point same direction) → cos(0°) = 1 → documents are identical
-- If angle is 90° (vectors perpendicular) → cos(90°) = 0 → documents are completely different
-- If angle is 45° (somewhat similar) → cos(45°) ≈ 0.71 → documents are moderately similar
+### Worked example
 
-### Worked Example
-
-Let's calculate similarity between Doc1 and Doc2 from earlier:
+Using Doc 1 and Doc 2 from before:
 
 ```
-Doc1 = [0.044, 0.044, 0.119, 0.044, 0.000, 0.000, 0.000, 0.000, 0.000]
-Doc2 = [0.044, 0.044, 0.000, 0.044, 0.119, 0.000, 0.000, 0.000, 0.000]
+Doc 1 = [0.044, 0.044, 0.119, 0.044, 0.000, ...]
+Doc 2 = [0.044, 0.044, 0.000, 0.044, 0.119, ...]
 ```
 
-**Step 1: Dot Product (A · B)**
+**Step 1 — Dot product:**
 ```
-A · B = (0.044 × 0.044) + (0.044 × 0.044) + (0.119 × 0.000) + (0.044 × 0.044) + ...
-      = 0.001936 + 0.001936 + 0 + 0.001936 + 0 + ...
+A · B = (0.044 × 0.044) + (0.044 × 0.044) + (0.119 × 0.000) + (0.044 × 0.044) + (0.000 × 0.119)
+      = 0.001936 + 0.001936 + 0 + 0.001936 + 0
       = 0.005808
 ```
 
-**Step 2: Magnitude of Doc1**
+**Step 2 — Magnitudes:**
 ```
-||Doc1|| = sqrt(0.044² + 0.044² + 0.119² + 0.044² + 0² + ...)
-         = sqrt(0.001936 + 0.001936 + 0.014161 + 0.001936)
-         = sqrt(0.019969)
-         = 0.1413
+||Doc 1|| = sqrt(0.044² + 0.044² + 0.119² + 0.044²) = sqrt(0.019969) ≈ 0.1413
+||Doc 2|| = sqrt(0.044² + 0.044² + 0.044² + 0.119²) = sqrt(0.019969) ≈ 0.1413
 ```
 
-**Step 3: Magnitude of Doc2**
+**Step 3 — Cosine similarity:**
 ```
-||Doc2|| = sqrt(0.044² + 0.044² + 0² + 0.044² + 0.119² + ...)
-         = sqrt(0.019969)  (turns out to be same as Doc1)
-         = 0.1413
+similarity = 0.005808 / (0.1413 × 0.1413) = 0.005808 / 0.01997 ≈ 0.291
 ```
 
-**Step 4: Cosine Similarity**
-```
-similarity = 0.005808 / (0.1413 × 0.1413)
-           = 0.005808 / 0.01997
-           = 0.291
-```
-
-**Interpretation**: Similarity of 0.291 means Doc1 and Doc2 are somewhat similar (they share "are cute animals") but also different (one has "cats", the other has "dogs").
+A score of 0.291 reflects moderate similarity: the two documents share vocabulary related to animals ("are", "cute", "animals") but differ in their subject ("cats" vs. "dogs").
 
 ---
 
-## Part 3: The Complete Algorithm
+## Part 3: The Full Pipeline
 
-Here's how it works in my implementation:
+This section describes how the two techniques above are combined into a complete document matching system.
 
-### Input
-- Reuters corpus (10,788 documents)
-- User's query document
-- Percentile threshold (0-100)
+### Inputs
 
-### Step-by-Step Process
+- The **Reuters corpus** (10,788 news articles from 1987, accessed via NLTK)
+- A **query document** provided by the user
+- A **percentile threshold** between 0 and 100
 
-**STEP 1: Load Corpus**
+### Step-by-step process
+
+**Step 1 — Load the corpus**
+
 ```python
 from nltk.corpus import reuters
 corpus = [reuters.raw(doc_id) for doc_id in reuters.fileids()]
 ```
 
-We get about 10,788 news articles.
+This retrieves the raw text of all ~10,788 documents. No preprocessing (tokenization, stopword removal, stemming) is applied.
 
-**STEP 2: Build TF-IDF Vectors for Entire Corpus**
+**Step 2 — Build TF-IDF vectors for the corpus**
+
 ```python
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -203,30 +199,28 @@ vectorizer = TfidfVectorizer()
 corpus_vectors = vectorizer.fit_transform(corpus)
 ```
 
-This creates a matrix:
-- Rows = documents (10,788)
-- Columns = unique words in vocabulary (~35,000)
-- Values = TF-IDF scores
+`fit_transform` performs two operations: it learns the vocabulary and IDF values from the corpus (fit), then transforms every document into a TF-IDF vector (transform). The result is a sparse matrix of shape (10,788 × ~30,916), where each row is a document and each column is a term in the vocabulary.
 
-The matrix is *sparse* (mostly zeros) because any given document only contains a small fraction of the total vocabulary.
+**Step 3 — Transform the query document**
 
-**STEP 3: Transform Query Document**
 ```python
 query_vector = vectorizer.transform([user_document])
 ```
 
-Important: We use the SAME vectorizer (same vocabulary) that was fit on the corpus. If the query contains words not in the corpus vocabulary, they get ignored.
+The query is transformed using the *same* vocabulary and IDF values learned in Step 2. Any words in the query that do not appear in the corpus vocabulary are simply ignored.
 
-**STEP 4: Calculate Cosine Similarity**
+**Step 4 — Compute cosine similarity**
+
 ```python
 from sklearn.metrics.pairwise import cosine_similarity
 
 similarities = cosine_similarity(query_vector, corpus_vectors)[0]
 ```
 
-This returns an array of 10,788 similarity scores, one for each corpus document.
+This yields an array of 10,788 similarity scores, one for each document in the corpus.
 
-**STEP 5: Apply Percentile Threshold**
+**Step 5 — Apply the percentile filter**
+
 ```python
 import numpy as np
 
@@ -234,143 +228,98 @@ threshold = np.percentile(similarities, percentile)
 matching_indices = np.where(similarities >= threshold)[0]
 ```
 
-Example: if percentile=70, this finds the similarity value where 70% of documents fall below it. Then we keep only documents at or above that threshold.
+`np.percentile(similarities, 70)`, for instance, finds the value below which 70% of all scores fall. Only documents with a similarity at or above that value are retained.
 
-**STEP 6: Sort and Return Results**
+**Step 6 — Sort and return**
+
 ```python
 results = [(doc_ids[idx], similarities[idx]) for idx in matching_indices]
 results.sort(key=lambda x: x[1], reverse=True)
 ```
 
-Sort by similarity score, highest first.
+The matched documents are sorted from highest to lowest similarity for presentation to the user.
 
 ---
 
-## Part 4: Full Worked Example
+## Part 4: Complete Worked Example
 
-Here's a complete example with a small corpus to show every step.
+To illustrate the entire pipeline end-to-end, consider a small corpus:
 
-### Setup
+| | Document |
+|---|---|
+| Doc 1 | *"The stock market rose today"* |
+| Doc 2 | *"Oil prices increased significantly"* |
+| Doc 3 | *"The weather is nice today"* |
 
-**Corpus:**
-1. Doc1: "The stock market rose today"
-2. Doc2: "Oil prices increased significantly"
-3. Doc3: "The weather is nice today"
+**Query:** *"Stock prices rose"*
+**Percentile:** 50 (return the top half)
 
-**Query:** "Stock prices rose"
+### Execution trace
 
-**Percentile:** 50 (return top 50%)
+**1. Vocabulary construction**
 
-### Execution
-
-**Step 1: Build Vocabulary**
+The vectorizer identifies 12 unique terms:
 ```
 {increased, is, market, nice, oil, prices, rose, significantly, stock, the, today, weather}
 ```
-12 unique words total.
 
-**Step 2: Create TF-IDF Vectors** (simplified values)
-
-Here the non-zero values (for clarity):
+**2. TF-IDF vectors** (simplified, for illustration)
 
 ```
-               market  nice  oil  prices  rose  stock  the  today  weather  increased  is  sig
-Doc1:          0.40    0     0    0       0.30  0.40   0.15 0.30   0        0         0   0
-Doc2:          0       0     0.40 0.30    0     0      0    0      0        0.45      0   0.45
-Doc3:          0       0.45  0    0       0     0      0.15 0.30   0.40     0         0.40 0
-Query:         0       0     0    0.40    0.35  0.50   0    0      0        0         0   0
+            market  oil  prices  rose  stock  the  today  ...
+Doc 1:      0.40    0    0       0.30  0.40   0.15 0.30   ...
+Doc 2:      0       0.40 0.30    0     0      0    0      ...
+Doc 3:      0       0    0       0     0      0.15 0.30   ...
+Query:      0       0    0.40    0.35  0.50   0    0      ...
 ```
 
-(In reality these would be normalized)
-
-**Step 3: Calculate Cosine Similarities**
-
-Manually calculating (tho sklearn does this):
+**3. Cosine similarity scores**
 
 ```
-similarity(Query, Doc1):
-  - Both have: stock, rose
-  - Dot product relatively high
-  - Similarity ≈ 0.72
-
-similarity(Query, Doc2):
-  - Both have: prices
-  - Dot product lower
-  - Similarity ≈ 0.41
-
-similarity(Query, Doc3):
-  - No meaningful overlap
-  - Similarity ≈ 0.08
+similarity(Query, Doc 1) ≈ 0.72   (shared terms: stock, rose)
+similarity(Query, Doc 2) ≈ 0.41   (shared term: prices)
+similarity(Query, Doc 3) ≈ 0.08   (minimal overlap)
 ```
 
-**Step 4: Apply 50th Percentile**
+**4. Percentile filtering at 50th percentile**
+
+The sorted scores are [0.08, 0.41, 0.72]. The median (50th percentile) is 0.41. Documents with similarity >= 0.41 are retained:
+
+**5. Results**
+
 ```
-Sorted similarities: [0.08, 0.41, 0.72]
-50th percentile value = 0.41 (median)
-Keep documents where similarity >= 0.41
+1. Doc 1  "The stock market rose today"       | Similarity: 0.72
+2. Doc 2  "Oil prices increased significantly" | Similarity: 0.41
 ```
 
-**Step 5: Results**
-```
-1. Doc1 "stock market rose today"       | Similarity: 0.72
-2. Doc2 "oil prices increased"          | Similarity: 0.41
-```
-
-**Why these results make sense:**
-- Doc1 is most similar: shares "stock" and "rose" with query
-- Doc2 is moderately similar: shares "prices" with query
-- Doc3 is excluded: completely different topic (weather vs economics)
+Doc 3 is excluded — its content (weather) has essentially no topical connection to the query.
 
 ---
 
-## Part 5: Why This Works (And When It Doesn't)
+## Part 5: Strengths and Limitations
 
-### Why It Works
+### Strengths
 
-**1. Captures Topic Similarity**
-Documents about the same topic use similar vocabulary. A document about stock markets will have words like "stock", "market", "trading", "shares". TF-IDF captures this.
+**Topic discrimination.** Documents about the same subject tend to share vocabulary. TF-IDF captures this naturally: two articles about oil markets will both contain terms like "oil", "barrel", "crude", and "OPEC", and their vectors will point in similar directions.
 
-**2. Downweights Common Words**
-Words like "the", "is", "and" appear everywhere. TF-IDF gives them low scores so they don't dominate the similarity calculation.
+**Down-weighting of common words.** Function words ("the", "is", "and") appear in virtually every document and receive near-zero IDF scores. Their influence on similarity is therefore negligible, even without explicit stopword removal.
 
-**3. Length-Independent**
-Cosine similarity normalizes for document length. A 100-word article and a 1000-word article about the same topic can still have high similarity.
+**Length independence.** Cosine similarity normalizes for document length. A 50-word summary and a 500-word article on the same topic can still yield a high similarity score.
 
-**4. Computationally Efficient**
-Matrix operations are fast. Even with 10,000+ documents, we can compute all similarities in under a second.
+**Computational efficiency.** Sparse matrix operations are fast. On the full Reuters corpus (10,788 documents, ~30,000 terms), the entire query-matching step runs in under 0.1 seconds on standard hardware.
 
 ### Limitations
 
-**1. Bag of Words**
-Word order doesn't matter. These are treated the same:
-- "dog bites man"
-- "man bites dog"
+**Bag-of-words assumption.** TF-IDF ignores word order entirely. The sentences *"dog bites man"* and *"man bites dog"* produce identical vectors despite meaning very different things.
 
-**2. No Semantic Understanding**
-These are treated as completely different:
-- "car"
-- "automobile"
+**No semantic understanding.** Synonyms are treated as unrelated terms. "car" and "automobile" share no characters, so TF-IDF considers them completely independent — their vectors have no overlap.
 
-They don't share any letters so TF-IDF sees them as unrelated.
+**Vocabulary boundary.** Terms in the query that do not appear in the corpus vocabulary are discarded. This is particularly relevant when the query uses modern terminology against a historical corpus (Reuters dates from 1987).
 
-**3. Vocabulary Boundary**
-If your query contains words not in the corpus, they're ignored. This can be a problem with proper nouns, new terminology, or typos.
+**Polysemy.** A word like "bank" may refer to a financial institution or the side of a river. TF-IDF treats all occurrences identically, without regard for context.
 
-**4. No Context**
-The word "bank" could mean a financial bank or (for example) a river bank. TF-IDF treats all occurrences the same.
+### When to prefer alternatives
 
-### When to Use This vs Alternatives
-
-**Use TF-IDF + Cosine Similarity when:**
-- You have a fixed corpus to search
-- Documents use consistent terminology
-- Speed is important
-- You need explainable results
-
-**Use alternatives (word embeddings, transformers) when:**
-- You need semantic understanding (synonyms, context)
-- You're working across languages
-- You have GPU resources and time for more complex models
-- Documents use varied terminology for the same concepts
+TF-IDF with cosine similarity is well-suited for applications where the corpus and queries share consistent vocabulary, and where interpretability and speed matter. For tasks that require understanding of synonyms, context, or cross-lingual matching, dense embedding models (Word2Vec, BERT, or similar transformer-based approaches) would be more appropriate, at the cost of greater computational requirements.
 
 ---
