@@ -11,7 +11,13 @@ This is the main program that the user runs. It handles:
 Usage: python main.py
 """
 
+import os
 import sys
+
+# ensure sibling modules are importable regardless of how the script is invoked
+# (e.g. python src/main.py, python -m src.main, or from a different working directory)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from corpus_loader import CorpusLoader
 from document_matcher import DocumentMatcher
 
