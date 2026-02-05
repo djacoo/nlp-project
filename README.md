@@ -1,142 +1,189 @@
-# NLP Document Similarity Matcher
+<p align="center">
+  <h1 align="center">NLP Document Similarity Matcher</h1>
+  <p align="center">
+    Document similarity matching on the Reuters corpus using TF-IDF vectorization and cosine similarity.
+    <br />
+    <em>NLP Course — General Assignment, Option C</em>
+  </p>
+</p>
 
-## Assignment Overview
-This project implements **Option C** from the NLP course general assignment: a document similarity matcher using TF-IDF and cosine similarity.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.8%2B-3776AB?logo=python&logoColor=white" alt="Python 3.8+">
+  <img src="https://img.shields.io/badge/NLTK-Reuters%20Corpus-154f3c" alt="NLTK">
+  <img src="https://img.shields.io/badge/scikit--learn-TF--IDF-f7931e?logo=scikit-learn&logoColor=white" alt="scikit-learn">
+  <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License">
+  <img src="https://img.shields.io/badge/tests-3%2F3%20passing-brightgreen" alt="Tests Passing">
+</p>
 
-### What it does
-- Accepts a document and a match percentile from the user
-- Computes TF-IDF vectors for the document and the Reuters corpus
-- Calculates cosine similarity between the input document and all corpus documents
-- Returns documents with similarity above the specified percentile threshold
-- No stopword elimination
+---
+
+## Overview
+
+This project implements a complete document similarity matching system as described in **Option C** of the NLP course general assignment. Given a user-provided document and a match percentile, the system identifies and returns all documents in the Reuters corpus whose cosine similarity (computed over TF-IDF vectors) exceeds the specified percentile threshold.
+
+The entire pipeline operates on raw, unprocessed text — no stopword elimination is applied, as required by the assignment specification.
+
+### How it works
+
+1. The Reuters corpus (~10,788 news articles) is loaded via NLTK
+2. TF-IDF vectors are computed for every document in the corpus
+3. The user provides a query document and a percentile threshold (0–100)
+4. Cosine similarity is calculated between the query and each corpus document
+5. Documents scoring above the percentile threshold are returned, sorted by descending similarity
 
 ## Project Structure
+
 ```
 nlp-project/
-├── src/                         # Source code
+├── src/
+│   ├── __init__.py              # Package init and version
+│   ├── main.py                  # Entry point and CLI interface
+│   ├── corpus_loader.py         # Reuters corpus download and loading
+│   └── document_matcher.py      # TF-IDF vectorization and cosine similarity
+├── tests/
 │   ├── __init__.py
-│   ├── main.py                  # Entry point
-│   ├── corpus_loader.py         # Reuters corpus loader
-│   └── document_matcher.py      # TF-IDF and similarity matching
-├── tests/                       # Testing
-│   ├── __init__.py
-│   ├── test_document_matcher.py # Unit tests
-│   ├── test_integration.py      # Integration tests
-│   └── test_sample.txt          # Sample test file
-├── docs/                        # Documentation
-│   ├── ALGORITHM_EXPLAINED.md   # Algorithm details
-│   └── TESTING.md               # Testing documentation
-├── assignment/                  # Assignment PDF
-│   └── assignment.pdf
-├── requirements.txt             # Python dependencies
-├── .gitignore                   # Git ignore rules
-├── LICENSE                      # MIT License
-└── README.md                    # This file
+│   ├── test_document_matcher.py # Unit tests for DocumentMatcher
+│   ├── test_integration.py      # Integration tests on full corpus
+│   └── test_sample.txt          # Sample document for file input testing
+├── docs/
+│   ├── ALGORITHM_EXPLAINED.md   # Detailed walkthrough of the algorithm
+│   └── TESTING.md               # Test methodology and results
+├── assignment/
+│   └── assignment.pdf           # Original assignment specification
+├── requirements.txt
+├── LICENSE
+├── .gitignore
+└── README.md
 ```
 
-## Installation
+## Getting Started
 
 ### Prerequisites
+
 - Python 3.8 or higher
-- pip package manager
+- pip
 
-### Setup
-1. Clone the repository:
+### Installation
+
 ```bash
-git clone <repository-url>
+# Clone the repository
+git clone https://github.com/djacoo/nlp-project.git
 cd nlp-project
-```
 
-2. Create a virtual environment (recommended):
-```bash
+# Create and activate a virtual environment (recommended)
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
+source venv/bin/activate        # macOS / Linux
+venv\Scripts\activate           # Windows
 
-3. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-4. Download NLTK data (Reuters corpus):
-The corpus will be downloaded automatically on first run, or you can download it manually:
-```python
-import nltk
-nltk.download('reuters')
-```
+The Reuters corpus (~2 MB) is downloaded automatically on first run via NLTK.
 
-## Usage
+### Running the Program
 
-### Running the application
 ```bash
-cd src
-python main.py
+python src/main.py
 ```
 
-### Input options
-The program will prompt you to:
-1. Choose input method:
-   - Enter text directly
-   - Provide a file path to a document
-2. Enter a match percentile (0-100)
+The program will prompt for:
+1. **Input method** — paste text directly or provide a path to a `.txt` file
+2. **Match percentile** — a value between 0 and 100
 
-### Example
+### Example Session
+
 ```
-Document Similarity Matcher - NLP Assignment Option C
+======================================================================
+INITIALIZING DOCUMENT SIMILARITY MATCHER
 ======================================================================
 
-How would you like to provide the document?
+[1/4] Loading Reuters corpus...
+Loaded 10788 documents from Reuters corpus
+
+[2/4] Computing TF-IDF vectors...
+TF-IDF matrix shape: (10788, 30916)
+  - 10788 documents
+  - 30916 unique terms in vocabulary
+
+[3/4] Getting user input...
+
+How would you provide the document?
 1. Enter text directly
 2. Provide a file path
 
-Enter your choice (1 or 2): 1
+Enter (1 or 2): 2
+Enter the file path: tests/test_sample.txt
 
-Enter your document text (press Ctrl+D or Ctrl+Z when done):
-This is a test document about economic trends and market analysis.
-^D
+[4/4] Finding similar documents...
 
-Enter match percentile (0-100): 70
-
-Searching for similar documents...
+Similarity distribution: 4743/10788 documents share terms with query
+Percentile threshold (70.0th): 0.0119
 
 ======================================================================
-Documents matching above 70th percentile
-Found 15 matching documents
+Documents matching above 70.0th percentile
+Found 3237 matching documents
 ======================================================================
 
-  1. test/14826            | Similarity: 0.8542
-  2. test/14828            | Similarity: 0.7893
+  1. training/144         | Similarity: 0.3247
+  2. test/18911            | Similarity: 0.3195
+  3. training/3734         | Similarity: 0.2978
   ...
 ```
 
 ## Running Tests
+
 ```bash
-python -m unittest discover tests
+# Unit tests
+python -m unittest tests.test_document_matcher -v
+
+# Integration tests (requires Reuters corpus download)
+python tests/test_integration.py
 ```
 
-Or run specific test file:
-```bash
-python -m unittest tests.test_document_matcher
-```
+See [`docs/TESTING.md`](docs/TESTING.md) for full test methodology and results.
 
 ## Technical Details
 
-### Libraries Used
-- **NLTK**: Reuters corpus access
-- **scikit-learn**: TF-IDF vectorization and cosine similarity
-- **NumPy**: Numerical operations
-- **Pandas**: Data handling (optional)
+### Dependencies
 
-### Algorithm
-1. Load Reuters corpus using NLTK
-2. Create TF-IDF vectors for all corpus documents using `TfidfVectorizer`
-3. Transform user's input document using the same vectorizer
-4. Compute cosine similarity between input and all corpus documents
-5. Calculate percentile threshold
-6. Return documents with similarity >= threshold
+| Library | Purpose |
+|---------|---------|
+| **NLTK** (>=3.8.1) | Access to the Reuters newswire corpus |
+| **scikit-learn** (>=1.3.0) | `TfidfVectorizer` and `cosine_similarity` |
+| **NumPy** (>=1.24.0) | Percentile computation and array operations |
 
-### Key Features
-- No stopword elimination
-- Complete document matching
-- Percentile-based filtering
-- Sorted results by similarity score
+### Algorithm Summary
+
+The matching pipeline follows these steps:
+
+1. **Corpus loading** — Raw text of all 10,788 Reuters documents is retrieved through `nltk.corpus.reuters`
+2. **TF-IDF vectorization** — `TfidfVectorizer` (with default settings, no stopword removal) builds the vocabulary and transforms each document into a sparse TF-IDF vector
+3. **Query transformation** — The user's document is transformed using the same fitted vectorizer, ensuring a shared vocabulary space
+4. **Cosine similarity** — `sklearn.metrics.pairwise.cosine_similarity` computes the similarity between the query vector and every corpus vector
+5. **Percentile filtering** — `numpy.percentile` determines the threshold value; only documents meeting or exceeding this threshold are retained
+6. **Sorting** — Results are ordered by similarity score in descending order
+
+For a detailed explanation with worked examples, see [`docs/ALGORITHM_EXPLAINED.md`](docs/ALGORITHM_EXPLAINED.md).
+
+### Design Decisions
+
+- **No stopword removal** — The assignment explicitly requires that no stopword elimination phase is applied. All words contribute to the TF-IDF vectors.
+- **Sparse matrix representation** — The TF-IDF matrix is stored in compressed sparse row (CSR) format, keeping memory usage manageable despite the large vocabulary (~30,000 terms).
+- **Percentile-based thresholding** — Rather than requiring the user to guess an absolute similarity cutoff, the percentile approach adapts to the actual score distribution for any given query.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [`docs/ALGORITHM_EXPLAINED.md`](docs/ALGORITHM_EXPLAINED.md) | Step-by-step explanation of TF-IDF, cosine similarity, and the full matching pipeline with worked examples |
+| [`docs/TESTING.md`](docs/TESTING.md) | Test environment, methodology, unit and integration test results, edge cases, and performance notes |
+| [`assignment/assignment.pdf`](assignment/assignment.pdf) | Original assignment specification |
+
+## License
+
+This project is licensed under the MIT License — see [`LICENSE`](LICENSE) for details.
+
+---
+
+<p align="center"><em>Jacopo Parretti — NLP Course, 2026</em></p>
