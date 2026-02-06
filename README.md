@@ -23,7 +23,7 @@ This project implements a complete document similarity matching system as descri
 
 The entire pipeline operates on raw, unprocessed text — no stopword elimination is applied, as required by the assignment specification.
 
-### How it works
+### Workflow
 
 1. The Reuters corpus (~10,788 news articles) is loaded via NLTK
 2. TF-IDF vectors are computed for every document in the corpus
@@ -56,24 +56,23 @@ nlp-project/
 └── README.md
 ```
 
-## Getting Started
+## Setup
 
 ### Prerequisites
 
 - Python 3.8 or higher
 - pip
 
-### Installation
+### Install
 
 ```bash
 # Clone the repository
 git clone https://github.com/djacoo/nlp-project.git
 cd nlp-project
 
-# Create and activate a virtual environment (recommended)
+# Create and activate a virtual environment
 python -m venv venv
-source venv/bin/activate        # macOS / Linux
-venv\Scripts\activate           # Windows
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -81,7 +80,7 @@ pip install -r requirements.txt
 
 The Reuters corpus (~2 MB) is downloaded automatically on first run via NLTK.
 
-### Running the Program
+### Run
 
 ```bash
 python src/main.py
@@ -91,7 +90,7 @@ The program will prompt for:
 1. **Input method** — paste text directly or provide a path to a `.txt` file
 2. **Match percentile** — a value between 0 and 100
 
-### Example Session
+### Example
 
 ```
 ======================================================================
@@ -131,59 +130,18 @@ Found 3237 matching documents
   ...
 ```
 
-## Running Tests
+## Tests
 
 ```bash
 # Unit tests
 python -m unittest tests.test_document_matcher -v
 
-# Integration tests (requires Reuters corpus download)
+# Integration tests
 python tests/test_integration.py
 ```
 
 See [`docs/TESTING.md`](docs/TESTING.md) for full test methodology and results.
 
-## Technical Details
-
-### Dependencies
-
-| Library | Purpose |
-|---------|---------|
-| **NLTK** (>=3.8.1) | Access to the Reuters newswire corpus |
-| **scikit-learn** (>=1.3.0) | `TfidfVectorizer` and `cosine_similarity` |
-| **NumPy** (>=1.24.0) | Percentile computation and array operations |
-
-### Algorithm Summary
-
-The matching pipeline follows these steps:
-
-1. **Corpus loading** — Raw text of all 10,788 Reuters documents is retrieved through `nltk.corpus.reuters`
-2. **TF-IDF vectorization** — `TfidfVectorizer` (with default settings, no stopword removal) builds the vocabulary and transforms each document into a sparse TF-IDF vector
-3. **Query transformation** — The user's document is transformed using the same fitted vectorizer, ensuring a shared vocabulary space
-4. **Cosine similarity** — `sklearn.metrics.pairwise.cosine_similarity` computes the similarity between the query vector and every corpus vector
-5. **Percentile filtering** — `numpy.percentile` determines the threshold value; only documents meeting or exceeding this threshold are retained
-6. **Sorting** — Results are ordered by similarity score in descending order
-
-For a detailed explanation with worked examples, see [`docs/ALGORITHM_EXPLAINED.md`](docs/ALGORITHM_EXPLAINED.md).
-
-### Design Decisions
-
-- **No stopword removal** — The assignment explicitly requires that no stopword elimination phase is applied. All words contribute to the TF-IDF vectors.
-- **Sparse matrix representation** — The TF-IDF matrix is stored in compressed sparse row (CSR) format, keeping memory usage manageable despite the large vocabulary (~30,000 terms).
-- **Percentile-based thresholding** — Rather than requiring the user to guess an absolute similarity cutoff, the percentile approach adapts to the actual score distribution for any given query.
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [`docs/ALGORITHM_EXPLAINED.md`](docs/ALGORITHM_EXPLAINED.md) | Step-by-step explanation of TF-IDF, cosine similarity, and the full matching pipeline with worked examples |
-| [`docs/TESTING.md`](docs/TESTING.md) | Test environment, methodology, unit and integration test results, edge cases, and performance notes |
-| [`assignment/assignment.pdf`](assignment/assignment.pdf) | Original assignment specification |
-
-## License
-
-This project is licensed under the MIT License — see [`LICENSE`](LICENSE) for details.
-
 ---
 
-<p align="center"><em>Jacopo Parretti — NLP Course, 2026</em></p>
+<p align="center"><em>Jacopo Parretti - VR536104 — NLP Project - MsC in Artificial Intelligence - 2025-2026</em></p>

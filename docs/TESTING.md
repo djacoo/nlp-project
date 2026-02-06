@@ -2,7 +2,7 @@
 
 ## NLP Document Similarity Matcher — Option C
 
-This document describes the testing methodology, environment, and results for the document similarity matching system.
+This document describes the testing, environment, and results for this project.
 
 ---
 
@@ -10,11 +10,11 @@ This document describes the testing methodology, environment, and results for th
 
 | Component | Version / Details |
 |-----------|-------------------|
-| Operating System | macOS Darwin 25.2.0 |
+| Operating System | macOS |
 | Python | 3.12 |
 | NLTK | 3.9.2 |
 | scikit-learn | 1.8.0 |
-| NumPy | (bundled with scikit-learn) |
+| NumPy | (with scikit-learn) |
 | Corpus | Reuters — 10,788 documents, 30,916 unique terms |
 
 ---
@@ -23,7 +23,7 @@ This document describes the testing methodology, environment, and results for th
 
 **Location:** `tests/test_document_matcher.py`
 
-The unit tests operate on a small, self-contained corpus of four documents. This makes them fast to run and independent of the Reuters download. Each test targets a specific aspect of the `DocumentMatcher` class.
+These unit tests work on a small corpus of four documents. This makes them fast to run and independent of the Reuters download. Each test targets a specific aspect of the `DocumentMatcher` class.
 
 ### test_fit_corpus
 
@@ -67,11 +67,11 @@ python -m unittest tests.test_document_matcher -v
 
 **Location:** `tests/test_integration.py`
 
-The integration tests exercise the full pipeline against the complete Reuters corpus (10,788 documents). They verify that all components work together correctly at scale.
+The integration tests work on the full pipeline against the complete Reuters corpus (10,788 documents). They verify that all components work together correctly.
 
 ### Test 1 — Corpus Loading
 
-Loads the Reuters corpus via `CorpusLoader` and checks that the expected number of documents is returned.
+Loads the Reuters corpus with `CorpusLoader` and checks that the expected number of documents is returned.
 
 **Result:** PASS — loaded 10,788 documents with matching document IDs.
 
@@ -93,16 +93,16 @@ Percentile: 70th
 
 ### Test 4 — Percentile Filtering
 
-The same financial query is tested at different percentile levels to verify the filtering mechanism.
+This same query is tested at different percentile levels to verify the filtering working.
 
 | Percentile | Threshold | Documents Returned | % of Corpus |
 |------------|-----------|-------------------|-------------|
 | 50th | 0.0000 | 10,788 | 100% |
 | 90th | 0.0348 | 1,079 | 10.0% |
 
-The 50th percentile threshold of 0.0 is expected behavior: due to the sparse nature of TF-IDF vectors, the majority of documents in the corpus have zero similarity to any given short query. The median similarity is therefore 0.0, and the filter includes all documents. Meaningful filtering begins around the 55th–60th percentile for most queries.
+The 50th percentile threshold of 0.0 is expected behavior: due to the sparse nature of TF-IDF vectors, the majority of documents in the corpus have zero similarity to any given short query. The median similarity is therefore 0.0, and the filter includes all documents. More important filtering begins around the 55th–60th percentile for most queries.
 
-**Result:** PASS — confirmed that a lower percentile always yields at least as many results as a higher one.
+**Result:** PASS — confirmed that a lower percentile always gives at least as many results as a higher one.
 
 ### Test 5 — Cross-Topic Query
 
@@ -112,7 +112,7 @@ Percentile: 70th
 **Result:** PASS
 - Found 3,237 matching documents
 - Top match: `training/10129` with similarity 0.2175
-- The top match differs from the financial query, confirming that the system distinguishes between topics
+- The top match differs from the financial query, confirming that the project distinguishes between topics
 
 ### Test 6 — Boundary: 0th Percentile
 
@@ -145,32 +145,6 @@ python tests/test_integration.py
 
 ---
 
-## Edge Cases
-
-The following edge cases were tested manually to ensure robust behavior.
-
-### Empty or out-of-vocabulary query
-
-If the user provides a query whose terms do not appear anywhere in the corpus vocabulary (or an empty string), the resulting TF-IDF vector contains only zeros. In this case, the system returns an empty result set with a warning message rather than returning all documents with a meaningless similarity of 0.0.
-
-### No shared vocabulary
-
-A query composed entirely of words absent from the Reuters corpus (for instance, modern terms like "cryptocurrency" or "blockchain", which do not appear in a 1987 news archive) is handled identically to the empty query case above — the system detects the zero vector and returns early.
-
-### Identical document
-
-When the query is identical to a document in the corpus, cosine similarity returns exactly 1.0, as expected (the angle between identical vectors is 0°).
-
-### Very short queries
-
-Queries consisting of only one or two words are processed normally. The TF-IDF vector will have very few non-zero entries, and similarity scores will tend to be lower, but the computation remains correct.
-
-### Very long queries
-
-Queries of several thousand words are handled without issue. The sparse matrix representation ensures that memory and computation scale with the number of non-zero terms rather than the total vocabulary size.
-
----
-
 ## Test Summary
 
 | Category | Passed | Failed |
@@ -179,36 +153,5 @@ Queries of several thousand words are handled without issue. The sparse matrix r
 | Integration Tests | 9 | 0 |
 | Edge Cases | 5 | 0 |
 | **Total** | **17** | **0** |
-
----
-
-## Performance
-
-The following timings were observed during integration testing on a standard laptop (macOS, Apple Silicon):
-
-| Operation | Duration |
-|-----------|----------|
-| Corpus loading (first run, includes download) | 2–3 seconds |
-| Corpus loading (subsequent runs) | < 1 second |
-| TF-IDF vectorization (full corpus) | 2–3 seconds |
-| Single query matching | < 0.1 seconds |
-| Peak memory usage | ~50–100 MB |
-
-These figures are well within acceptable limits for a corpus of this size. The sparse matrix format used by scikit-learn keeps memory consumption modest despite the large vocabulary (~30,000 terms).
-
----
-
-## Reproducing the Tests
-
-```bash
-# Unit tests (no corpus download required)
-python -m unittest tests.test_document_matcher -v
-
-# Integration tests (downloads Reuters corpus on first run)
-python tests/test_integration.py
-
-# Manual testing
-python src/main.py
-```
 
 ---
